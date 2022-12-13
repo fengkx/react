@@ -1886,8 +1886,7 @@ describe('ReactDOMServerSelectiveHydration', () => {
     expect(initialSpan).toBe(spanRef);
   });
 
-  // @gate experimental || www
-  it('regression test: can unwind context on selective hydration interruption', async () => {
+  it('regression test: can unwind context on selective hydration interruption for sync updates', async () => {
     const Context = React.createContext('DefaultContext');
 
     function ContextReader(props) {
@@ -1926,9 +1925,6 @@ describe('ReactDOMServerSelectiveHydration', () => {
     expect(Scheduler).toHaveYielded(['App', 'A', 'DefaultContext']);
     const container = document.createElement('div');
     container.innerHTML = finalHTML;
-    document.body.appendChild(container);
-
-    const spanA = container.getElementsByTagName('span')[0];
 
     await act(async () => {
       const root = ReactDOMClient.hydrateRoot(container, <App a="A" />);
@@ -1938,14 +1934,12 @@ describe('ReactDOMServerSelectiveHydration', () => {
         'Commit',
       ]);
 
-      TODO_scheduleIdleDOMSchedulerTask(() => {
+      ReactDOM.flushSync(() => {
         root.render(<App a="AA" />);
       });
-      expect(Scheduler).toFlushAndYieldThrough(['App', 'A']);
-
-      dispatchClickEvent(spanA);
-      expect(Scheduler).toHaveYielded(['A']);
-      expect(Scheduler).toFlushAndYield([
+      expect(Scheduler).toHaveYielded([
+        'App',
+        'A',
         'App',
         'AA',
         'DefaultContext',

@@ -2072,7 +2072,6 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
             // Selective hydration. An update flowed into a dehydrated tree.
             // Interrupt the current render so the work loop can switch to the
             // hydration lane.
-            workInProgress = null;
             workInProgressRootExitStatus = RootDidNotComplete;
             break outer;
           }
@@ -2097,8 +2096,12 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   popDispatcher(prevDispatcher);
   popCacheDispatcher(prevCacheDispatcher);
 
-  if (workInProgress !== null) {
-    // This is a sync render, so we should have finished the whole tree.
+  if (
+    workInProgress !== null &&
+    workInProgressRootExitStatus !== RootDidNotComplete
+  ) {
+    // This is a sync render, so we should have finished the whole tree unless
+    // it is interrupted by selective hydration.
     throw new Error(
       'Cannot commit an incomplete root. This error is likely caused by a ' +
         'bug in React. Please file an issue.',
